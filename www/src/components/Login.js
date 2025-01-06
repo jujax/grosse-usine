@@ -21,8 +21,12 @@ function Login() {
       }
 
       const data = await response.json();
-      setMessage(data.message);
-      localStorage.setItem('token', data.token);
+      if (data.message === 'Email not verified') {
+        setMessage('Login failed: Email not verified');
+      } else {
+        setMessage(data.message);
+        localStorage.setItem('token', data.token);
+      }
     } catch (error) {
       if (error.message) {
         setMessage(`Login failed: ${error.message}`);
@@ -35,6 +39,32 @@ function Login() {
   const handleLogout = () => {
     localStorage.removeItem('token');
     setMessage('Logged out successfully');
+  };
+
+  const handleResendVerificationEmail = async () => {
+    try {
+      const response = await fetch(`http://localhost:8080/resend-verification-email`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || response.statusText);
+      }
+
+      const data = await response.json();
+      setMessage(data.message);
+    } catch (error) {
+      if (error.message) {
+        setMessage(`Failed to resend verification email: ${error.message}`);
+      } else {
+        setMessage('Failed to resend verification email: An unknown error occurred');
+      }
+    }
   };
 
   const isLoggedIn = !!localStorage.getItem('token');
@@ -59,6 +89,7 @@ function Login() {
             onChange={(e) => setPassword(e.target.value)}
           />
           <button onClick={handleLogin}>Login</button>
+          <button onClick={handleResendVerificationEmail}>Resend Verification Email</button>
         </>
       )}
       <p>{message}</p>
