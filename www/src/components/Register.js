@@ -53,6 +53,7 @@ function Register() {
       />
       <button onClick={handleRegister}>Register</button>
       <p>{message}</p>
+      <p>Please check your email for the verification link.</p>
     </div>
   );
 }
