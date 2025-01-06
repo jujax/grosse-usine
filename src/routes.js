@@ -1,25 +1,18 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
-const { Pool } = require('pg');
 const jwt = require('jsonwebtoken');
+const prisma = require('./db');
 
 const router = express.Router();
-const pool = new Pool({
-  user: process.env.DB_USER,
-  host: process.env.DB_HOST,
-  database: process.env.DB_NAME,
-  password: process.env.DB_PASSWORD,
-  port: process.env.DB_PORT,
-});
 
 // Login route
 router.post('/login', async (req, res) => {
   const { username, password } = req.body;
-  const client = await pool.connect();
   try {
-    const result = await client.query('SELECT * FROM "AppUser" WHERE email = $1', [username]);
-    if (result.rows.length > 0) {
-      const user = result.rows[0];
+    const user = await prisma.appUser.findUnique({
+      where: { email: username },
+    });
+    if (user) {
       const isMatch = await bcrypt.compare(password, user.password);
       if (isMatch) {
         const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
@@ -30,8 +23,8 @@ router.post('/login', async (req, res) => {
     } else {
       res.status(401).send({ message: 'Invalid credentials' });
     }
-  } finally {
-    client.release();
+  } catch (error) {
+    res.status(500).send({ message: 'Internal server error' });
   }
 });
 
@@ -39,12 +32,16 @@ router.post('/login', async (req, res) => {
 router.post('/register', async (req, res) => {
   const { username, password } = req.body;
   const hashedPassword = await bcrypt.hash(password, 10);
-  const client = await pool.connect();
   try {
-    await client.query('INSERT INTO "AppUser" (email, password) VALUES ($1, $2)', [username, hashedPassword]);
+    await prisma.appUser.create({
+      data: {
+        email: username,
+        password: hashedPassword,
+      },
+    });
     res.status(201).send({ message: 'User registered successfully' });
-  } finally {
-    client.release();
+  } catch (error) {
+    res.status(500).send({ message: 'Internal server error' });
   }
 });
 
