@@ -11,6 +11,13 @@ function Register() {
     console.log('Username:', username);
     console.log('Password:', password);
 
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(username)) {
+      setMessage('Invalid email format');
+      return;
+    }
+
     try {
       const response = await fetch("http://localhost:8080/register", {
         method: 'POST',

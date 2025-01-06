@@ -6,6 +6,13 @@ function Login() {
   const [message, setMessage] = useState('');
 
   const handleLogin = async () => {
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(username)) {
+      setMessage('Invalid email format');
+      return;
+    }
+
     try {
       const response = await fetch(`http://localhost:8080/login`, {
         method: 'POST',
