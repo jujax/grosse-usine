@@ -36,7 +36,7 @@ router.post('/login', async (req, res) => {
     });
     if (user) {
       if (!user.isEmailVerified) {
-        return res.status(401).send({ message: 'Email not verified' });
+        return res.status(403).send({ message: 'Email not verified' });
       }
       const isMatch = await bcrypt.compare(password, user.password);
       if (isMatch) {
@@ -143,7 +143,7 @@ router.post('/resend-verification-email', async (req, res) => {
         EX: 60 * 60 * 24, // 24 hours expiration
       });
 
-      const verificationLink = `http://localhost:3000/verify-email?token=${verificationToken}`;
+      const verificationLink = `http://localhost:8080/verify-email?token=${verificationToken}`;
       await transporter.sendMail({
         from: process.env.EMAIL_USER,
         to: username,

@@ -47,8 +47,8 @@ function Register() {
     <div>
       <h1>Register</h1>
       <input
-        type="text"
-        placeholder="Username"
+        type="email"
+        placeholder="Email"
         value={username}
         onChange={(e) => setUsername(e.target.value)}
       />
@@ -60,7 +60,6 @@ function Register() {
       />
       <button onClick={handleRegister}>Register</button>
       <p>{message}</p>
-      <p>Please check your email for the verification link.</p>
     </div>
   );
 }

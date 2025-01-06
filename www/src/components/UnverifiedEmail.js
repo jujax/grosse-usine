@@ -28,11 +28,18 @@ function UnverifiedEmail() {
     }
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('username');
+    window.location.href = '/login';
+  };
+
   return (
     <div>
       <h1>Email Not Verified</h1>
       <p>Your email is not verified. Please check your email for the verification link.</p>
       <button onClick={handleResendVerificationEmail}>Resend Verification Email</button>
+      <button onClick={handleLogout}>Logout</button>
     </div>
   );
 }
