@@ -7,11 +7,32 @@ function Register() {
   const [message, setMessage] = useState('');
 
   const handleRegister = async () => {
+    console.log('handleRegister called');
+    console.log('Username:', username);
+    console.log('Password:', password);
+
     try {
-      const response = await axios.post(`${process.env.REACT_APP_API_URL}/register`, { username, password });
-      setMessage(response.data.message);
+      const response = await fetch("http://localhost:8080/register", {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ username, password })
+      });
+
+      console.log('Response status:', response.status);
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+
+      const data = await response.json();
+      console.log('Response data:', data);
+
+      setMessage(data.message);
     } catch (error) {
-      setMessage('Registration failed');
+      console.error('Error:', error);
+      setMessage(`Registration failed: ${error.message}`);
     }
   };
 
