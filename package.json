@@ -1,0 +1,14 @@
+{
+    "scripts": {
+        "lint": "eslint .",
+        "lint:fix": "eslint . --fix",
+        "format": "prettier --write .",
+        "prepare": "husky install"
+    },
+    "lint-staged": {
+        "*.{js,json,md}": [
+            "eslint --fix",
+            "prettier --write"
+        ]
+    }
+}
