@@ -20,6 +20,7 @@ redisClient.connect().catch(err => {
 // Email verification setup
 const transporter = nodemailer.createTransport({
   service: 'Mailgun',
+  host: process.env.EMAIL_HOST,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
@@ -43,11 +44,14 @@ router.post('/login', async (req, res) => {
         res.status(200).send({ message: 'Login successful', token });
       } else {
         res.status(401).send({ message: 'Invalid credentials' });
+        console.log('Invalid credentials attempt for user:', req.body.username);
       }
     } else {
       res.status(401).send({ message: 'Invalid credentials' });
+      console.log('Invalid credentials attempt for user:', req.body.username);
     }
   } catch (error) {
+    console.error('Error during login:', error);
     res.status(500).send({ message: 'Internal server error' });
   }
 });
@@ -55,10 +59,12 @@ router.post('/login', async (req, res) => {
 // Register route
 router.post('/register', async (req, res) => {
   const { username, password } = req.body;
+  console.log('Register attempt for user:', username);
 
   // Validate email format
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(username)) {
+    console.log('Invalid email format for user:', username);
     return res.status(400).send({ message: 'Invalid email format' });
   }
 
@@ -72,10 +78,12 @@ router.post('/register', async (req, res) => {
         isEmailVerified: false,
       },
     });
+    console.log('User created with ID:', user.id);
 
     await redisClient.set(`verificationToken:${verificationToken}`, user.id, {
       EX: 60 * 60 * 24, // 24 hours expiration
     });
+    console.log('Verification token set for user:', user.id);
 
     const verificationLink = `http://localhost:8080/verify-email?token=${verificationToken}`;
     await transporter.sendMail({
@@ -87,6 +95,7 @@ router.post('/register', async (req, res) => {
 
     res.status(201).send({ message: 'User registered successfully. Please check your email for verification link.' });
   } catch (error) {
+    console.error('Error during registration:', error);
     res.status(500).send({ message: 'Internal server error' });
   }
 });
