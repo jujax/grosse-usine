@@ -1,6 +1,7 @@
 const express = require('express');
 const bcrypt = require('bcrypt');
 const { Pool } = require('pg');
+const jwt = require('jsonwebtoken');
 
 const router = express.Router();
 const pool = new Pool({
@@ -21,7 +22,8 @@ router.post('/login', async (req, res) => {
       const user = result.rows[0];
       const isMatch = await bcrypt.compare(password, user.password);
       if (isMatch) {
-        res.status(200).send({ message: 'Login successful' });
+        const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
+        res.status(200).send({ message: 'Login successful', token });
       } else {
         res.status(401).send({ message: 'Invalid credentials' });
       }
@@ -49,6 +51,12 @@ router.post('/register', async (req, res) => {
 // Test API route
 router.get('/api', (req, res) => {
   res.send('Hello World!');
+});
+
+const middleware = require('./middleware');
+
+router.get('/protected-route', middleware.authMiddleware, (req, res) => {
+  res.send('This is a protected route');
 });
 
 module.exports = router;

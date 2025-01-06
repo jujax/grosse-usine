@@ -10,27 +10,41 @@ function Login() {
     try {
       const response = await axios.post(`${process.env.REACT_APP_API_URL}/login`, { username, password });
       setMessage(response.data.message);
+      localStorage.setItem('token', response.data.token);
     } catch (error) {
       setMessage('Login failed');
     }
   };
 
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    setMessage('Logged out successfully');
+  };
+
+  const isLoggedIn = !!localStorage.getItem('token');
+
   return (
     <div>
-      <h1>Login</h1>
-      <input
-        type="text"
-        placeholder="Username"
-        value={username}
-        onChange={(e) => setUsername(e.target.value)}
-      />
-      <input
-        type="password"
-        placeholder="Password"
-        value={password}
-        onChange={(e) => setPassword(e.target.value)}
-      />
-      <button onClick={handleLogin}>Login</button>
+      <h1>{isLoggedIn ? 'Welcome' : 'Login'}</h1>
+      {isLoggedIn ? (
+        <button onClick={handleLogout}>Logout</button>
+      ) : (
+        <>
+          <input
+            type="text"
+            placeholder="Username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+          />
+          <input
+            type="password"
+            placeholder="Password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          <button onClick={handleLogin}>Login</button>
+        </>
+      )}
       <p>{message}</p>
     </div>
   );
