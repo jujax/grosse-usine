@@ -1,14 +1,26 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
-
-console.log('Script loaded'); // Ajoutez ceci pour vérifier que le script est chargé
+import Login from './components/Login';
+import Register from './components/Register';
 
 const App = () => {
-    console.log('App component rendered'); // Ajoutez ceci pour vérifier que le composant est rendu
-    return <h1>Hello World</h1>;
+  const token = localStorage.getItem('token');
+  const isLoggedIn = !!token;
+
+  return (
+    <div>
+      {isLoggedIn ? (
+        <h1>Hello World</h1>
+      ) : (
+        <>
+          <Login />
+          <Register />
+        </>
+      )}
+    </div>
+  );
 };
 
 const rootElement = document.getElementById('root');
 const root = ReactDOM.createRoot(rootElement);
 root.render(<App />);
-console.log('ReactDOM.render called'); // Ajoutez ceci pour vérifier que ReactDOM.render est appelé
