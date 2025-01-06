@@ -5,7 +5,8 @@
         "format": "prettier --write .",
         "prepare": "husky install",
         "build": "webpack --mode production",
-        "start": "webpack serve --mode development"
+        "start-dev": "webpack serve --mode development",
+        "start": "yarn build && node src/index.js"
     },
     "lint-staged": {
         "*.{js,json,md}": [

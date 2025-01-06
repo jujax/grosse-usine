@@ -17,7 +17,7 @@ router.post('/login', async (req, res) => {
   const { username, password } = req.body;
   const client = await pool.connect();
   try {
-    const result = await client.query('SELECT * FROM users WHERE username = $1', [username]);
+    const result = await client.query('SELECT * FROM "AppUser" WHERE email = $1', [username]);
     if (result.rows.length > 0) {
       const user = result.rows[0];
       const isMatch = await bcrypt.compare(password, user.password);
@@ -41,7 +41,7 @@ router.post('/register', async (req, res) => {
   const hashedPassword = await bcrypt.hash(password, 10);
   const client = await pool.connect();
   try {
-    await client.query('INSERT INTO users (username, password) VALUES ($1, $2)', [username, hashedPassword]);
+    await client.query('INSERT INTO "AppUser" (email, password) VALUES ($1, $2)', [username, hashedPassword]);
     res.status(201).send({ message: 'User registered successfully' });
   } finally {
     client.release();

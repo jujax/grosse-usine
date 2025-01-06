@@ -1,5 +1,4 @@
 import React, { useState } from 'react';
-import axios from 'axios';
 
 function Login() {
   const [username, setUsername] = useState('');
@@ -8,11 +7,28 @@ function Login() {
 
   const handleLogin = async () => {
     try {
-      const response = await axios.post(`${process.env.REACT_APP_API_URL}/login`, { username, password });
-      setMessage(response.data.message);
-      localStorage.setItem('token', response.data.token);
+      const response = await fetch(`http://localhost:8080/login`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ username, password }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || response.statusText);
+      }
+
+      const data = await response.json();
+      setMessage(data.message);
+      localStorage.setItem('token', data.token);
     } catch (error) {
-      setMessage('Login failed');
+      if (error.message) {
+        setMessage(`Login failed: ${error.message}`);
+      } else {
+        setMessage('Login failed: An unknown error occurred');
+      }
     }
   };
 
