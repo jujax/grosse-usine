@@ -19,7 +19,7 @@ redisClient.connect().catch(err => {
 
 // Email verification setup
 const transporter = nodemailer.createTransport({
-  service: 'Gmail',
+  service: 'Mailgun',
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
@@ -70,7 +70,7 @@ router.post('/register', async (req, res) => {
       EX: 60 * 60 * 24, // 24 hours expiration
     });
 
-    const verificationLink = `http://localhost:3000/verify-email?token=${verificationToken}`;
+    const verificationLink = `http://localhost:8080/verify-email?token=${verificationToken}`;
     await transporter.sendMail({
       from: process.env.EMAIL_USER,
       to: username,
