@@ -55,6 +55,13 @@ router.post('/login', async (req, res) => {
 // Register route
 router.post('/register', async (req, res) => {
   const { username, password } = req.body;
+
+  // Validate email format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(username)) {
+    return res.status(400).send({ message: 'Invalid email format' });
+  }
+
   const hashedPassword = await bcrypt.hash(password, 10);
   const verificationToken = crypto.randomBytes(32).toString('hex');
   try {
@@ -107,6 +114,13 @@ router.get('/verify-email', async (req, res) => {
 // Resend verification email route
 router.post('/resend-verification-email', async (req, res) => {
   const { username } = req.body;
+
+  // Validate email format
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(username)) {
+    return res.status(400).send({ message: 'Invalid email format' });
+  }
+
   try {
     const user = await prisma.appUser.findUnique({
       where: { email: username },
