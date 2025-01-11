@@ -6,8 +6,10 @@ const nodemailer = require("nodemailer");
 const crypto = require("crypto");
 const { createClient } = require("redis");
 const { v4: uuidv4 } = require("uuid");
+const { PrismaClient } = require("../prisma/generated/mongo");
 
 const router = express.Router();
+const mongoPrisma = new PrismaClient();
 
 // Redis setup
 const redisClient = createClient({
@@ -99,6 +101,16 @@ router.post("/register", async (req, res) => {
       text: `Please verify your email by clicking on the following link: ${verificationLink}`,
     });
 
+    // Create user in MongoDB using the same ID
+    const mongoUser = await mongoPrisma.user.create({
+      data: {
+        id: userId,
+        username: username,
+        email: username,
+        password: hashedPassword,
+      },
+    });
+
     res
       .status(201)
       .send({
@@ -107,6 +119,16 @@ router.post("/register", async (req, res) => {
       });
   } catch (error) {
     console.error("Error during registration:", error);
+
+    // Error handling for MongoDB user creation
+    if (error instanceof mongoPrisma.PrismaClientValidationError) {
+      console.error("MongoDB Validation Error:", error);
+      return res.status(400).send({ message: "MongoDB Validation Error" });
+    } else if (error instanceof mongoPrisma.PrismaClientKnownRequestError) {
+      console.error("MongoDB Error:", error);
+      return res.status(500).send({ message: "MongoDB Error" });
+    }
+
     res.status(500).send({ message: "Internal server error" });
   }
 });

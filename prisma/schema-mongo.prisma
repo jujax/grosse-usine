@@ -9,7 +9,7 @@ datasource db {
 }
 
 model User {
-  id       String    @id @default(auto()) @map("_id") @db.ObjectId
+  id       String    @id @default(dbgenerated()) @map("_id") @db.Uuid
   username String
   email    String    @unique
   password String
@@ -18,8 +18,6 @@ model User {
 
   reviews  Review[]  @relation("UserReviews")
   // comments Comment[] @relation("UserComments")
-
- 
 }
 
 model Work {
