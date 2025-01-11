@@ -5,7 +5,7 @@ const DB_URI = "mongodb://localhost:27017/mydatabase";
 mongoose
   .connect(DB_URI, { useNewUrlParser: true, useUnifiedTopology: true })
   .then(() => console.log("Connected to MongoDB"))
-  .catch((err) => console.error("Connection error:", err));
+  .catch(err => console.error("Connection error:", err));
 
 // Schémas
 const userSchema = new mongoose.Schema({
@@ -49,7 +49,7 @@ const Comment = mongoose.model("Comment", commentSchema);
 // Paramètres
 const BATCH_SIZE = 10000;
 const NB_USERS = 1000000;
-const NB_WORKS = 10000;
+const NB_WORKS = 100000;
 const NB_REVIEWS = 1000000;
 const NB_COMMENTS = 1000000;
 
@@ -58,7 +58,9 @@ async function insertInBatches(model, data, batchSize) {
   for (let i = 0; i < data.length; i += batchSize) {
     const batch = data.slice(i, i + batchSize);
     await model.insertMany(batch);
-    console.log(`Inserted ${batch.length} into ${model.collection.collectionName}`);
+    console.log(
+      `Inserted ${batch.length} into ${model.collection.collectionName}`
+    );
   }
 }
 
@@ -82,25 +84,41 @@ async function generateUsers() {
 // Ajout d'amis bidirectionnels
 async function addFriends() {
   console.log("Adding friends...");
-  const allUsers = await User.find({}, "_id").lean();
-  const userIds = allUsers.map((user) => user._id);
+  const allUsers = await getXPercentOfModel(User);
+  const userIds = allUsers.map(user => user._id);
 
   for (let i = 0; i < userIds.length; i += BATCH_SIZE) {
     const batchIds = userIds.slice(i, i + BATCH_SIZE);
     for (const userId of batchIds) {
       const numberOfFriends = faker.number.int({ min: 1, max: 5 });
-      const randomFriends = faker.helpers.arrayElements(userIds, numberOfFriends);
+      const randomFriends = faker.helpers.arrayElements(
+        userIds,
+        numberOfFriends
+      );
 
       for (const friendId of randomFriends) {
         if (friendId.toString() !== userId.toString()) {
-          await User.updateOne({ _id: userId }, { $addToSet: { friends: friendId } });
-          await User.updateOne({ _id: friendId }, { $addToSet: { friends: userId } });
+          await User.updateOne(
+            { _id: userId },
+            { $addToSet: { friends: friendId } }
+          );
+          await User.updateOne(
+            { _id: friendId },
+            { $addToSet: { friends: userId } }
+          );
         }
       }
     }
     console.log(`Processed friends for batch ${i / BATCH_SIZE + 1}`);
   }
   console.log("Friends added!");
+}
+
+async function getXPercentOfModel(model, percent = 10) {
+    const totalOfDocs = await model.countDocuments(); // Nombre total d'utilisateurs
+    const tenPercent = Math.floor(totalOfDocs * (percent / 100)); // Calculer 10 %
+    const allDocs = await model.find({}, "_id").limit(tenPercent).lean();
+    return allDocs;
 }
 
 // Génération des œuvres
@@ -110,7 +128,10 @@ async function generateWorks() {
   const works = Array.from({ length: NB_WORKS }, () => ({
     title: faker.commerce.productName(),
     type: faker.helpers.arrayElement(types),
-    genre: faker.helpers.arrayElements(["Aventure", "SF", "Comédie", "Action", "Drame"], 2),
+    genre: faker.helpers.arrayElements(
+      ["Aventure", "SF", "Comédie", "Action", "Drame"],
+      2
+    ),
     releaseDate: faker.date.past(30),
     rating: faker.number.float({ min: 1, max: 5, precision: 0.1 }),
     votesCount: faker.number.int({ min: 1, max: 1000 }),
@@ -122,10 +143,10 @@ async function generateWorks() {
 // Génération des critiques
 async function generateReviews() {
   console.log("Generating reviews...");
-  const users = await User.find({}, "_id").lean();
-  const works = await Work.find({}, "_id").lean();
-  const userIds = users.map((user) => user._id);
-  const workIds = works.map((work) => work._id);
+  const users = await getXPercentOfModel(User);
+  const works = await getXPercentOfModel(Work);
+  const userIds = users.map(user => user._id);
+  const workIds = works.map(work => work._id);
 
   const reviews = Array.from({ length: NB_REVIEWS }, () => ({
     userId: faker.helpers.arrayElement(userIds),
@@ -141,10 +162,10 @@ async function generateReviews() {
 // Génération des commentaires
 async function generateComments() {
   console.log("Generating comments...");
-  const users = await User.find({}, "_id").lean();
-  const reviews = await Review.find({}, "_id").lean();
-  const userIds = users.map((user) => user._id);
-  const reviewIds = reviews.map((review) => review._id);
+  const users = await getXPercentOfModel(User);
+  const reviews = await getXPercentOfModel(Review);
+  const userIds = users.map(user => user._id);
+  const reviewIds = reviews.map(review => review._id);
 
   const comments = Array.from({ length: NB_COMMENTS }, () => ({
     reviewId: faker.helpers.arrayElement(reviewIds),
@@ -158,13 +179,13 @@ async function generateComments() {
 
 // Exécuter le script
 async function run() {
-//   await generateUsers();
-//   await addFriends();
-  await generateWorks();
-  await generateReviews();
+    // await generateUsers();
+  //   await addFriends();
+//   await generateWorks();
+//   await generateReviews();
   await generateComments();
   console.log("Data generation complete!");
   mongoose.disconnect();
 }
 
-run().catch((err) => console.error(err));
+run().catch(err => console.error(err));

@@ -118,7 +118,7 @@ router.get("/verify-email", async (req, res) => {
     const userId = await redisClient.get(`verificationToken:${token}`);
     if (userId) {
       await prisma.appUser.update({
-        where: { id: parseInt(userId, 10) },
+        where: { id: userId },
         data: { isEmailVerified: true },
       });
       await redisClient.del(`verificationToken:${token}`);
