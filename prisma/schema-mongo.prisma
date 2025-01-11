@@ -17,7 +17,7 @@ model User {
   // friends  User[]    @relation("Friendship", references: [id])
 
   reviews  Review[]  @relation("UserReviews")
-  comments Comment[] @relation("UserComments")
+  // comments Comment[] @relation("UserComments")
 
  
 }
@@ -44,16 +44,16 @@ model Review {
 
   user     User     @relation("UserReviews", fields: [userId], references: [id])
   work     Work     @relation("WorkReviews", fields: [workId], references: [id])
-  comments Comment[] @relation("ReviewComments")
+  // comments Comment[] @relation("ReviewComments")
 }
 
-model Comment {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
-  reviewId    String   @db.ObjectId
-  userId      String   @db.ObjectId
-  commentText String
-  date        DateTime
+// model Comment {
+//   id          String   @id @default(auto()) @map("_id") @db.ObjectId
+//   reviewId    String   @db.ObjectId
+//   userId      String   @db.ObjectId
+//   commentText String
+//   date        DateTime
 
-  review      Review   @relation("ReviewComments", fields: [reviewId], references: [id])
-  user        User     @relation("UserComments", fields: [userId], references: [id])
-}
+//   review      Review   @relation("ReviewComments", fields: [reviewId], references: [id])
+//   user        User     @relation("UserComments", fields: [userId], references: [id])
+// }
