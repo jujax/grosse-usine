@@ -1,12 +1,12 @@
-const express = require('express');
-const path = require('path');
-const jwt = require('jsonwebtoken');
-const prisma = require('./db');
+const express = require("express");
+const path = require("path");
+const jwt = require("jsonwebtoken");
+const prisma = require("./db");
 
 const authMiddleware = (req, res, next) => {
-  const token = req.headers.authorization?.split(' ')[1];
+  const token = req.headers.authorization?.split(" ")[1];
   if (!token) {
-    return res.status(401).send({ message: 'Unauthorized' });
+    return res.status(401).send({ message: "Unauthorized" });
   }
 
   try {
@@ -14,10 +14,10 @@ const authMiddleware = (req, res, next) => {
     req.userId = decoded.userId;
     next();
   } catch (error) {
-    if (error.name === 'TokenExpiredError') {
-      res.status(401).send({ message: 'Token expired' });
+    if (error.name === "TokenExpiredError") {
+      res.status(401).send({ message: "Token expired" });
     } else {
-      res.status(401).send({ message: 'Unauthorized' });
+      res.status(401).send({ message: "Unauthorized" });
     }
   }
 };
@@ -28,7 +28,7 @@ const emailVerifiedMiddleware = async (req, res, next) => {
   });
 
   if (!user.isEmailVerified) {
-    return res.status(403).send({ message: 'Email not verified' });
+    return res.status(403).send({ message: "Email not verified" });
   }
 
   next();
@@ -36,7 +36,7 @@ const emailVerifiedMiddleware = async (req, res, next) => {
 
 const middleware = {
   jsonParser: express.json(),
-  staticFiles: express.static(path.join(__dirname, '../dist')),
+  staticFiles: express.static(path.join(__dirname, "../dist")),
   authMiddleware,
   emailVerifiedMiddleware,
 };

@@ -1,35 +1,34 @@
-import React, { useState, useEffect } from 'react';
-import UnverifiedEmail from './UnverifiedEmail';
+import React, { useState, useEffect } from "react";
+import UnverifiedEmail from "./UnverifiedEmail";
 
 function Login() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [message, setMessage] = useState('');
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [message, setMessage] = useState("");
   const [isEmailVerified, setIsEmailVerified] = useState(true);
 
   useEffect(() => {
     // Code à exécuter lorsque isEmailVerified change
-    console.log('isEmailVerified:', isEmailVerified);
+    console.log("isEmailVerified:", isEmailVerified);
     if (!isEmailVerified) {
       // Par exemple, vous pouvez afficher un message ou recharger un composant
-      console.log('Email non vérifié');
+      console.log("Email non vérifié");
     }
   }, [isEmailVerified]); // Le tableau de dépendances contient isEmailVerified
-
 
   const handleLogin = async () => {
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(username)) {
-      setMessage('Invalid email format');
+      setMessage("Invalid email format");
       return;
     }
 
     try {
       const response = await fetch(`http://localhost:8080/login`, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({ username, password }),
       });
@@ -42,34 +41,33 @@ function Login() {
       const data = await response.json();
 
       setMessage(data.message);
-      localStorage.setItem('token', data.token);
+      localStorage.setItem("token", data.token);
     } catch (error) {
-      if (error.message === 'Email not verified') {
-        localStorage.setItem('username', username);
+      if (error.message === "Email not verified") {
+        localStorage.setItem("username", username);
         setIsEmailVerified(false);
-        setMessage('Email not verified');
-        console.log('Email not verified');
+        setMessage("Email not verified");
+        console.log("Email not verified");
       } else if (error.message) {
         setMessage(`Login failed: ${error.message}`);
       } else {
-        setMessage('Login failed: An unknown error occurred');
+        setMessage("Login failed: An unknown error occurred");
       }
     }
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
-    setMessage('Logged out successfully');
+    localStorage.removeItem("token");
+    setMessage("Logged out successfully");
   };
 
-  const isLoggedIn = !!localStorage.getItem('token');
+  const isLoggedIn = !!localStorage.getItem("token");
   if (!isEmailVerified) {
     return <UnverifiedEmail username={username} />;
-  }
-  else {
+  } else {
     return (
       <div>
-        <h1>{isLoggedIn ? 'Welcome' : 'Login'}</h1>
+        <h1>{isLoggedIn ? "Welcome" : "Login"}</h1>
         {isLoggedIn ? (
           <button onClick={handleLogout}>Logout</button>
         ) : (
@@ -78,13 +76,13 @@ function Login() {
               type="email"
               placeholder="Email"
               value={username}
-              onChange={(e) => setUsername(e.target.value)}
+              onChange={e => setUsername(e.target.value)}
             />
             <input
               type="password"
               placeholder="Password"
               value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              onChange={e => setPassword(e.target.value)}
             />
             <button onClick={handleLogin}>Login</button>
           </>

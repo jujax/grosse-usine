@@ -1,10 +1,11 @@
-const express = require('express');
-const bcrypt = require('bcrypt');
-const jwt = require('jsonwebtoken');
-const prisma = require('./db');
-const nodemailer = require('nodemailer');
-const crypto = require('crypto');
-const { createClient } = require('redis');
+const express = require("express");
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const prisma = require("./db");
+const nodemailer = require("nodemailer");
+const crypto = require("crypto");
+const { createClient } = require("redis");
+const { v4: uuidv4 } = require("uuid");
 
 const router = express.Router();
 
@@ -13,14 +14,15 @@ const redisClient = createClient({
   url: process.env.REDIS_URL,
 });
 redisClient.connect().catch(err => {
-  console.error('Failed to connect to Redis', err);
+  console.error("Failed to connect to Redis", err);
   process.exit(1);
 });
 
 // Email verification setup
 const transporter = nodemailer.createTransport({
-  service: 'Mailgun',
+  secure: true,
   host: process.env.EMAIL_HOST,
+  port: process.env.EMAIL_PORT,
   auth: {
     user: process.env.EMAIL_USER,
     pass: process.env.EMAIL_PASS,
@@ -28,7 +30,7 @@ const transporter = nodemailer.createTransport({
 });
 
 // Login route
-router.post('/login', async (req, res) => {
+router.post("/login", async (req, res) => {
   const { username, password } = req.body;
   try {
     const user = await prisma.appUser.findUnique({
@@ -36,72 +38,81 @@ router.post('/login', async (req, res) => {
     });
     if (user) {
       if (!user.isEmailVerified) {
-        return res.status(403).send({ message: 'Email not verified' });
+        return res.status(403).send({ message: "Email not verified" });
       }
       const isMatch = await bcrypt.compare(password, user.password);
       if (isMatch) {
-        const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, { expiresIn: '1h' });
-        res.status(200).send({ message: 'Login successful', token });
+        const token = jwt.sign({ userId: user.id }, process.env.JWT_SECRET, {
+          expiresIn: "1h",
+        });
+        res.status(200).send({ message: "Login successful", token });
       } else {
-        res.status(401).send({ message: 'Invalid credentials' });
-        console.log('Invalid credentials attempt for user:', req.body.username);
+        res.status(401).send({ message: "Invalid credentials" });
+        console.log("Invalid credentials attempt for user:", req.body.username);
       }
     } else {
-      res.status(401).send({ message: 'Invalid credentials' });
-      console.log('Invalid credentials attempt for user:', req.body.username);
+      res.status(401).send({ message: "Invalid credentials" });
+      console.log("Invalid credentials attempt for user:", req.body.username);
     }
   } catch (error) {
-    console.error('Error during login:', error);
-    res.status(500).send({ message: 'Internal server error' });
+    console.error("Error during login:", error);
+    res.status(500).send({ message: "Internal server error" });
   }
 });
 
 // Register route
-router.post('/register', async (req, res) => {
+router.post("/register", async (req, res) => {
   const { username, password } = req.body;
-  console.log('Register attempt for user:', username);
+  console.log("Register attempt for user:", username);
 
   // Validate email format
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(username)) {
-    console.log('Invalid email format for user:', username);
-    return res.status(400).send({ message: 'Invalid email format' });
+    console.log("Invalid email format for user:", username);
+    return res.status(400).send({ message: "Invalid email format" });
   }
 
   const hashedPassword = await bcrypt.hash(password, 10);
-  const verificationToken = crypto.randomBytes(32).toString('hex');
+  const verificationToken = crypto.randomBytes(32).toString("hex");
+  const userId = uuidv4();
   try {
     const user = await prisma.appUser.create({
       data: {
+        id: userId,
         email: username,
         password: hashedPassword,
         isEmailVerified: false,
       },
     });
-    console.log('User created with ID:', user.id);
+    console.log("User created with ID:", userId);
 
     await redisClient.set(`verificationToken:${verificationToken}`, user.id, {
       EX: 60 * 60 * 24, // 24 hours expiration
     });
-    console.log('Verification token set for user:', user.id);
+    console.log("Verification token set for user:", user.id);
 
     const verificationLink = `http://localhost:8080/verify-email?token=${verificationToken}`;
     await transporter.sendMail({
       from: process.env.EMAIL_USER,
       to: username,
-      subject: 'Email Verification',
+      subject: "Email Verification",
       text: `Please verify your email by clicking on the following link: ${verificationLink}`,
     });
 
-    res.status(201).send({ message: 'User registered successfully. Please check your email for verification link.' });
+    res
+      .status(201)
+      .send({
+        message:
+          "User registered successfully. Please check your email for verification link.",
+      });
   } catch (error) {
-    console.error('Error during registration:', error);
-    res.status(500).send({ message: 'Internal server error' });
+    console.error("Error during registration:", error);
+    res.status(500).send({ message: "Internal server error" });
   }
 });
 
 // Verify email route
-router.get('/verify-email', async (req, res) => {
+router.get("/verify-email", async (req, res) => {
   const { token } = req.query;
   try {
     const userId = await redisClient.get(`verificationToken:${token}`);
@@ -111,23 +122,25 @@ router.get('/verify-email', async (req, res) => {
         data: { isEmailVerified: true },
       });
       await redisClient.del(`verificationToken:${token}`);
-      res.status(200).send({ message: 'Email verified successfully' });
+      res.status(200).send({ message: "Email verified successfully" });
     } else {
-      res.status(400).send({ message: 'Invalid or expired verification token' });
+      res
+        .status(400)
+        .send({ message: "Invalid or expired verification token" });
     }
   } catch (error) {
-    res.status(500).send({ message: 'Internal server error' });
+    res.status(500).send({ message: "Internal server error" });
   }
 });
 
 // Resend verification email route
-router.post('/resend-verification-email', async (req, res) => {
+router.post("/resend-verification-email", async (req, res) => {
   const { username } = req.body;
 
   // Validate email format
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!emailRegex.test(username)) {
-    return res.status(400).send({ message: 'Invalid email format' });
+    return res.status(400).send({ message: "Invalid email format" });
   }
 
   try {
@@ -136,9 +149,9 @@ router.post('/resend-verification-email', async (req, res) => {
     });
     if (user) {
       if (user.isEmailVerified) {
-        return res.status(400).send({ message: 'Email is already verified' });
+        return res.status(400).send({ message: "Email is already verified" });
       }
-      const verificationToken = crypto.randomBytes(32).toString('hex');
+      const verificationToken = crypto.randomBytes(32).toString("hex");
       await redisClient.set(`verificationToken:${verificationToken}`, user.id, {
         EX: 60 * 60 * 24, // 24 hours expiration
       });
@@ -147,28 +160,34 @@ router.post('/resend-verification-email', async (req, res) => {
       await transporter.sendMail({
         from: process.env.EMAIL_USER,
         to: username,
-        subject: 'Email Verification',
+        subject: "Email Verification",
         text: `Please verify your email by clicking on the following link: ${verificationLink}`,
       });
 
-      res.status(200).send({ message: 'Verification email resent. Please check your email for verification link.' });
+      res
+        .status(200)
+        .send({
+          message:
+            "Verification email resent. Please check your email for verification link.",
+        });
     } else {
-      res.status(400).send({ message: 'User not found' });
+      res.status(400).send({ message: "User not found" });
     }
   } catch (error) {
-    res.status(500).send({ message: 'Internal server error' });
+    console.error("Error during resending verification email:", error);
+    res.status(500).send({ message: "Internal server error" });
   }
 });
 
 // Test API route
-router.get('/api', (req, res) => {
-  res.send('Hello World!');
+router.get("/api", (req, res) => {
+  res.send("Hello World!");
 });
 
-const middleware = require('./middleware');
+const middleware = require("./middleware");
 
-router.get('/protected-route', middleware.authMiddleware, (req, res) => {
-  res.send('This is a protected route');
+router.get("/protected-route", middleware.authMiddleware, (req, res) => {
+  res.send("This is a protected route");
 });
 
 module.exports = router;

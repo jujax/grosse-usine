@@ -1,44 +1,44 @@
-import React, { useState } from 'react';
-import axios from 'axios';
+import React, { useState } from "react";
+import axios from "axios";
 
 function Register() {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [message, setMessage] = useState('');
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [message, setMessage] = useState("");
 
   const handleRegister = async () => {
-    console.log('handleRegister called');
-    console.log('Username:', username);
-    console.log('Password:', password);
+    console.log("handleRegister called");
+    console.log("Username:", username);
+    console.log("Password:", password);
 
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(username)) {
-      setMessage('Invalid email format');
+      setMessage("Invalid email format");
       return;
     }
 
     try {
       const response = await fetch("http://localhost:8080/register", {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json'
+          "Content-Type": "application/json",
         },
-        body: JSON.stringify({ username, password })
+        body: JSON.stringify({ username, password }),
       });
 
-      console.log('Response status:', response.status);
+      console.log("Response status:", response.status);
 
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`);
       }
 
       const data = await response.json();
-      console.log('Response data:', data);
+      console.log("Response data:", data);
 
       setMessage(data.message);
     } catch (error) {
-      console.error('Error:', error);
+      console.error("Error:", error);
       setMessage(`Registration failed: ${error.message}`);
     }
   };
@@ -50,13 +50,13 @@ function Register() {
         type="email"
         placeholder="Email"
         value={username}
-        onChange={(e) => setUsername(e.target.value)}
+        onChange={e => setUsername(e.target.value)}
       />
       <input
         type="password"
         placeholder="Password"
         value={password}
-        onChange={(e) => setPassword(e.target.value)}
+        onChange={e => setPassword(e.target.value)}
       />
       <button onClick={handleRegister}>Register</button>
       <p>{message}</p>

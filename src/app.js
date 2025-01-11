@@ -1,9 +1,9 @@
-require('dotenv').config();
-const express = require('express');
-const path = require('path');
-const routes = require('./routes');
-const middleware = require('./middleware');
-const pool = require('./db');
+require("dotenv").config();
+const express = require("express");
+const path = require("path");
+const routes = require("./routes");
+const middleware = require("./middleware");
+const pool = require("./db");
 
 const app = express();
 const port = process.env.PORT || 3000;
@@ -16,8 +16,8 @@ app.use(middleware.staticFiles);
 app.use(routes);
 
 // Serve React app for any unmatched routes
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../dist', 'index.html'));
+app.get("*", (req, res) => {
+  res.sendFile(path.join(__dirname, "../dist", "index.html"));
 });
 
 // Start server
