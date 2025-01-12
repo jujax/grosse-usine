@@ -3,7 +3,6 @@ const express = require("express");
 const path = require("path");
 const routes = require("./routes");
 const middleware = require("./middleware");
-const pool = require("./db");
 
 const app = express();
 const port = process.env.PORT || 3000;

@@ -9,17 +9,13 @@ datasource db {
 }
 
 model User {
-  id       String    @id @default(auto()) @map("_id") @db.ObjectId
-  username String
-  email    String    @unique
-  password String
-  avatar   String
+  id       String @id @default(uuid()) @map("_id") @db.String
+  email    String @unique
+  avatar   String @default("")
   // friends  User[]    @relation("Friendship", references: [id])
 
   reviews  Review[]  @relation("UserReviews")
   // comments Comment[] @relation("UserComments")
-
- 
 }
 
 model Work {

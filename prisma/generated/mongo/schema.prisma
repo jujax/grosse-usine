@@ -8,10 +8,48 @@ datasource db {
   url      = env("MONGO_URL")
 }
 
-model AppUser {
-  id        String   @id @map("_id") @db.String
-  email     String   @unique
-  password  String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+model User {
+  id     String @id @default(uuid()) @map("_id") @db.String
+  email  String @unique
+  avatar String @default("")
+  // friends  User[]    @relation("Friendship", references: [id])
+
+  reviews Review[] @relation("UserReviews")
+  // comments Comment[] @relation("UserComments")
 }
+
+model Work {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  title       String
+  type        String
+  genre       String[]
+  releaseDate DateTime
+  rating      Float
+  votesCount  Int
+
+  reviews Review[] @relation("WorkReviews")
+}
+
+model Review {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId     String   @db.ObjectId
+  workId     String   @db.ObjectId
+  rating     Float
+  reviewText String
+  date       DateTime
+
+  user User @relation("UserReviews", fields: [userId], references: [id])
+  work Work @relation("WorkReviews", fields: [workId], references: [id])
+  // comments Comment[] @relation("ReviewComments")
+}
+
+// model Comment {
+//   id          String   @id @default(auto()) @map("_id") @db.ObjectId
+//   reviewId    String   @db.ObjectId
+//   userId      String   @db.ObjectId
+//   commentText String
+//   date        DateTime
+
+//   review      Review   @relation("ReviewComments", fields: [reviewId], references: [id])
+//   user        User     @relation("UserComments", fields: [userId], references: [id])
+// }

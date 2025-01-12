@@ -1,13 +1,17 @@
 const express = require("express");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const prisma = require("./db");
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
 const { createClient } = require("redis");
 const { v4: uuidv4 } = require("uuid");
+const { PrismaClient: PrismaClientMongo } = require("../prisma/generated/mongo");
+const { PrismaClient: PrismaClientPostgres } = require("../prisma/generated/postgres");
+
+const postgresPrisma = new PrismaClientPostgres();
 
 const router = express.Router();
+const mongoPrisma = new PrismaClientMongo();
 
 // Redis setup
 const redisClient = createClient({
@@ -33,7 +37,7 @@ const transporter = nodemailer.createTransport({
 router.post("/login", async (req, res) => {
   const { username, password } = req.body;
   try {
-    const user = await prisma.appUser.findUnique({
+    const user = await postgresPrisma.appUser.findUnique({
       where: { email: username },
     });
     if (user) {
@@ -76,7 +80,7 @@ router.post("/register", async (req, res) => {
   const verificationToken = crypto.randomBytes(32).toString("hex");
   const userId = uuidv4();
   try {
-    const user = await prisma.appUser.create({
+    const user = await postgresPrisma.appUser.create({
       data: {
         id: userId,
         email: username,
@@ -99,6 +103,14 @@ router.post("/register", async (req, res) => {
       text: `Please verify your email by clicking on the following link: ${verificationLink}`,
     });
 
+    // Create user in MongoDB using the same ID
+    const mongoUser = await mongoPrisma.user.create({
+      data: {
+        id: userId,
+        email: username,
+      },
+    });
+
     res
       .status(201)
       .send({
@@ -107,6 +119,16 @@ router.post("/register", async (req, res) => {
       });
   } catch (error) {
     console.error("Error during registration:", error);
+
+    // Error handling for MongoDB user creation
+    if (error instanceof mongoPrisma.PrismaClientValidationError) {
+      console.error("MongoDB Validation Error:", error);
+      return res.status(400).send({ message: "MongoDB Validation Error" });
+    } else if (error instanceof mongoPrisma.PrismaClientKnownRequestError) {
+      console.error("MongoDB Error:", error);
+      return res.status(500).send({ message: "MongoDB Error" });
+    }
+
     res.status(500).send({ message: "Internal server error" });
   }
 });
@@ -117,7 +139,7 @@ router.get("/verify-email", async (req, res) => {
   try {
     const userId = await redisClient.get(`verificationToken:${token}`);
     if (userId) {
-      await prisma.appUser.update({
+      await postgresPrisma.appUser.update({
         where: { id: userId },
         data: { isEmailVerified: true },
       });
@@ -144,7 +166,7 @@ router.post("/resend-verification-email", async (req, res) => {
   }
 
   try {
-    const user = await prisma.appUser.findUnique({
+    const user = await postgresPrisma.appUser.findUnique({
       where: { email: username },
     });
     if (user) {
