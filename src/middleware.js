@@ -1,7 +1,10 @@
 const express = require("express");
 const path = require("path");
 const jwt = require("jsonwebtoken");
-const prisma = require("./db");
+const { PrismaClient } = require("../prisma/generated/postgres");
+
+const prisma = new PrismaClient();
+
 
 const authMiddleware = (req, res, next) => {
   const token = req.headers.authorization?.split(" ")[1];

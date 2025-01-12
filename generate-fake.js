@@ -1,5 +1,6 @@
 const mongoose = require("mongoose");
 const { faker } = require("@faker-js/faker");
+const { v4: uuidv4 } = require("uuid");
 
 const DB_URI = "mongodb://localhost:27017/mydatabase";
 mongoose
@@ -9,12 +10,14 @@ mongoose
 
 // Schémas
 const userSchema = new mongoose.Schema({
-  username: String,
+  _id: {
+    type: String, // Le champ _id sera une chaîne
+    default: uuidv4, // Générer un UUID par défaut si non fourni
+  },
   email: String,
-  password: String,
   avatar: String,
-  friends: [{ type: mongoose.Schema.Types.ObjectId, ref: "User" }],
-});
+  friends: [{ type: String, ref: "User" }],
+}, { collection: "User" });
 
 const workSchema = new mongoose.Schema({
   title: String,
@@ -23,15 +26,15 @@ const workSchema = new mongoose.Schema({
   releaseDate: Date,
   rating: Number,
   votesCount: Number,
-});
+}, { collection: "Work" });
 
 const reviewSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
-  workId: { type: mongoose.Schema.Types.ObjectId, ref: "Work" },
+  userId: { type: String, ref: "User" },
+  workId: { type: String, ref: "Work" },
   rating: Number,
   reviewText: String,
   date: Date,
-});
+}, { collection: "Review" });
 
 const commentSchema = new mongoose.Schema({
   reviewId: { type: mongoose.Schema.Types.ObjectId, ref: "Review" },
@@ -69,7 +72,6 @@ async function generateUsers() {
   console.log("Generating users...");
   for (let i = 0; i < NB_USERS / BATCH_SIZE; i++) {
     const users = Array.from({ length: BATCH_SIZE }, () => ({
-      username: faker.internet.username(),
       email: faker.internet.email(),
       password: faker.internet.password(),
       avatar: faker.image.avatar(),
@@ -180,10 +182,10 @@ async function generateComments() {
 // Exécuter le script
 async function run() {
     // await generateUsers();
-  //   await addFriends();
-//   await generateWorks();
-//   await generateReviews();
-  await generateComments();
+    await addFriends();
+  // await generateWorks();
+  // await generateReviews();
+  // await generateComments();
   console.log("Data generation complete!");
   mongoose.disconnect();
 }

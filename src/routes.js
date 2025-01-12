@@ -1,15 +1,17 @@
 const express = require("express");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const prisma = require("./db");
 const nodemailer = require("nodemailer");
 const crypto = require("crypto");
 const { createClient } = require("redis");
 const { v4: uuidv4 } = require("uuid");
-const { PrismaClient } = require("../prisma/generated/mongo");
+const { PrismaClient: PrismaClientMongo } = require("../prisma/generated/mongo");
+const { PrismaClient: PrismaClientPostgres } = require("../prisma/generated/postgres");
+
+const postgresPrisma = new PrismaClientPostgres();
 
 const router = express.Router();
-const mongoPrisma = new PrismaClient();
+const mongoPrisma = new PrismaClientMongo();
 
 // Redis setup
 const redisClient = createClient({
@@ -35,7 +37,7 @@ const transporter = nodemailer.createTransport({
 router.post("/login", async (req, res) => {
   const { username, password } = req.body;
   try {
-    const user = await prisma.appUser.findUnique({
+    const user = await postgresPrisma.appUser.findUnique({
       where: { email: username },
     });
     if (user) {
@@ -78,7 +80,7 @@ router.post("/register", async (req, res) => {
   const verificationToken = crypto.randomBytes(32).toString("hex");
   const userId = uuidv4();
   try {
-    const user = await prisma.appUser.create({
+    const user = await postgresPrisma.appUser.create({
       data: {
         id: userId,
         email: username,
@@ -105,9 +107,7 @@ router.post("/register", async (req, res) => {
     const mongoUser = await mongoPrisma.user.create({
       data: {
         id: userId,
-        username: username,
         email: username,
-        password: hashedPassword,
       },
     });
 
@@ -139,7 +139,7 @@ router.get("/verify-email", async (req, res) => {
   try {
     const userId = await redisClient.get(`verificationToken:${token}`);
     if (userId) {
-      await prisma.appUser.update({
+      await postgresPrisma.appUser.update({
         where: { id: userId },
         data: { isEmailVerified: true },
       });
@@ -166,7 +166,7 @@ router.post("/resend-verification-email", async (req, res) => {
   }
 
   try {
-    const user = await prisma.appUser.findUnique({
+    const user = await postgresPrisma.appUser.findUnique({
       where: { email: username },
     });
     if (user) {

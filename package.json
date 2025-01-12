@@ -6,7 +6,8 @@
     "prepare": "husky install",
     "build": "webpack --mode production",
     "start-dev": "webpack serve --mode development",
-    "start": "yarn build && node src/index.js"
+    "start": "yarn build && node src/index.js",
+    "clean": "docker compose -f 'docker-compose.yml' down; docker compose -f 'docker-compose.yml' up -d;sleep 5;npx prisma migrate dev --name init --schema prisma/schema-postgres.prisma;npx prisma generate --schema prisma/schema-postgres.prisma;npx prisma generate --schema prisma/schema-mongo.prisma"
   },
   "lint-staged": {
     "*.{js,json,md}": [
